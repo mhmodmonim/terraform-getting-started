@@ -8,21 +8,16 @@ resource "aws_instance" "nginx_instances" {
   count                  = var.instance_count
   ami                    = nonsensitive(data.aws_ssm_parameter.amzn2_linux.value)
   instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.public_subnets[count.index].id
+  subnet_id              = aws_subnet.public_subnets[(count.index % var.instance_count)].id
   vpc_security_group_ids = [aws_security_group.nginx_sg.id]
-  tags                   = local.common_tags
-  iam_instance_profile   = aws_iam_instance_profile.nginx_profile.name
-  depends_on             = [aws_iam_role_policy.allow_s3_all]
-  user_data              = <<EOF
-#! /bin/bash
-sudo amazon-linux-extras install -y nginx1
-sudo service nginx start
-aws s3 cp s3://${aws_s3_bucket.s3.id}/website/index.html /home/ec2-user/index.html
-aws s3 cp s3://${aws_s3_bucket.s3.id}/website/Globo_logo_Vert.png /home/ec2-user/Globo_logo_Vert.png
-sudo rm /usr/share/nginx/html/index.html
-sudo cp /home/ec2-user/index.html /usr/share/nginx/html/index.html
-sudo cp /home/ec2-user/Globo_logo_Vert.png /usr/share/nginx/html/Globo_logo_Vert.png
-EOF
+  tags = merge(local.common_tags, {
+    Name = "${local.naming_prefix}-nginx-${count.index}"
+  })
+  iam_instance_profile = aws_iam_instance_profile.nginx_profile.name
+  depends_on           = [aws_iam_role_policy.allow_s3_all]
+  user_data = templatefile("${path.module}/templates/startup_script.tpl", {
+    aws_s3_bucket_name = aws_s3_bucket.s3.id
+  })
 
 }
 
@@ -46,7 +41,9 @@ resource "aws_iam_role" "allow_nginx_s3" {
     ]
   })
 
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Name = "${local.naming_prefix}-role"
+  })
 }
 
 # aws_iam_role_policy
@@ -79,5 +76,7 @@ resource "aws_iam_role_policy" "allow_s3_all" {
 resource "aws_iam_instance_profile" "nginx_profile" {
   role = aws_iam_role.allow_nginx_s3.name
   name = "nginx_profile"
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Name = "${local.naming_prefix}-ec2-profile"
+  })
 }

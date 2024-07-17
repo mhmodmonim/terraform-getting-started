@@ -71,3 +71,17 @@ variable "billing_code" {
   type        = string
   description = "Company name for each resource"
 }
+
+
+variable "naming_prefix" {
+  type        = string
+  description = "prefix name for all related resources"
+  default     = "Thiqah-ula"
+
+}
+
+variable "environment" {
+  type        = string
+  description = "the environment for deployment"
+  default     = "dev"
+}
