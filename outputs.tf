@@ -4,6 +4,6 @@ output "aws_instance_public_dns" {
 }
 
 output "aws_s3_bucket_arn" {
-  value = aws_s3_bucket.s3.arn
+  value       = aws_s3_bucket.s3.arn
   description = "arn of s3 bucket"
 }

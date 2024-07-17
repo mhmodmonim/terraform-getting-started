@@ -75,18 +75,12 @@ data "aws_iam_policy_document" "allow_access_from_another_account" {
 
 #aws_s3_object
 
-resource "aws_s3_object" "index" {
-  bucket = aws_s3_bucket.s3.bucket
-  key    = "website/index.html"
-  source = "./website/index.html"
+resource "aws_s3_object" "website_contents" {
+  for_each = local.website_content
+  bucket   = aws_s3_bucket.s3.bucket
+  key      = each.value
+  source   = "${path.root}/${each.value}"
 
   tags = local.common_tags
 
-}
-
-resource "aws_s3_object" "logo" {
-  bucket = aws_s3_bucket.s3.bucket
-  key    = "website/Globo_logo_Vert.png"
-  source = "./website/Globo_logo_Vert.png"
-  tags   = local.common_tags
 }

@@ -7,7 +7,7 @@ resource "aws_lb" "nginx-alb" {
   internal                   = false
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.alb_sg.id]
-  subnets                    = [aws_subnet.public_subnet1.id, aws_subnet.public_subnet2.id]
+  subnets                    = [for sb in aws_subnet.public_subnets : sb.id]
   depends_on                 = [aws_s3_bucket_policy.allow_access_from_another_account]
   enable_deletion_protection = false
 
@@ -44,14 +44,9 @@ resource "aws_lb_listener" "front_end" {
 
 #create target group instance attachments
 
-resource "aws_lb_target_group_attachment" "attach_nginx1" {
+resource "aws_lb_target_group_attachment" "attach_nginx_instances" {
+  count            = var.instance_count
   target_group_arn = aws_lb_target_group.nginx.arn
-  target_id        = aws_instance.nginx1.id
-  port             = 80
-}
-
-resource "aws_lb_target_group_attachment" "attach_nginx2" {
-  target_group_arn = aws_lb_target_group.nginx.arn
-  target_id        = aws_instance.nginx2.id
+  target_id        = aws_instance.nginx_instances[count.index].id
   port             = 80
 }
